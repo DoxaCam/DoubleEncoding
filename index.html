@@ -111,58 +111,42 @@
   <div id="feedback" role="status" aria-live="polite"></div>
 
   <script>
-    // Encoding pipeline:
-    //   plaintext -> octal (space-separated 3-digit codes) -> base64
-    // Validation:
-    //   SHA-256(user input) compared to SHA-256(plaintext) — plaintext never stored directly.
+    const encodedMessage = "MTQzIDE0NSAxNjIgMTY0IDE0MSAxNTEgMTU2IDE2NCAxNzEgMDQwIDE1MSAxNjMgMDQwIDE2NCAxNTAgMTQ1IDA0MCAxNDcgMTYyIDE0NSAxNDEgMTY0IDA0MCAxNDUgMTU2IDE0NSAxNTUgMTcxIDA0MCAxNTcgMTQ2IDA0MCAxNjUgMTU2IDE1MSAxNjQgMTcx";
+    const secretHash = "d2a88c5dedf070aede9fb2c4af67d906f5b67db4a0b0ca50f1f94b500de0f88f";
 
-    (async () => {
-      const plaintext = "certainty is the great enemy of unity";
+    document.getElementById('encoded').value = encodedMessage;
 
-      // Step 1: octal-encode each character (3-digit, zero-padded, space-separated)
-      const octalStr = plaintext
-        .split('')
-        .map(c => c.charCodeAt(0).toString(8).padStart(3, '0'))
-        .join(' ');
+    const encode = s => new TextEncoder().encode(s);
+    const toHex = buf => Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
 
-      // Step 2: base64-encode the octal string
-      document.getElementById('encoded').value = btoa(octalStr);
+    async function checkAnswer() {
+      const input = document.getElementById('answer').value.trim().toLowerCase();
+      const fb = document.getElementById('feedback');
+      if (!input) {fb.textContent = ''; fb.className = ''; return;}
 
-      // Hash the plaintext; only the hash is kept for comparison
-      const encode = s => new TextEncoder().encode(s);
-      const toHex = buf => Array.from(new Uint8Array(buf))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
-
-      const secretHash = toHex(await crypto.subtle.digest('SHA-256', encode(plaintext)));
-
-      async function checkAnswer() {
-        const input = document.getElementById('answer').value.trim().toLowerCase();
-        const fb = document.getElementById('feedback');
-        if (!input) {fb.textContent = ''; fb.className = ''; return;}
-
-        const inputHash = toHex(await crypto.subtle.digest('SHA-256', encode(input)));
-        if (inputHash === secretHash) {
-          fb.textContent = '✓ Correct! Well decoded.';
-          fb.className = 'correct';
-        } else {
-          fb.textContent = '✗ Incorrect. Try again.';
-          fb.className = 'wrong';
-        }
+      const inputHash = toHex(await crypto.subtle.digest('SHA-256', encode(input)));
+      if (inputHash === secretHash) {
+        fb.textContent = '✓ Correct! Well decoded.';
+        fb.className = 'correct';
+      } else {
+        fb.textContent = '✗ Incorrect. Try again.';
+        fb.className = 'wrong';
       }
+    }
 
-      function clearInput() {
-        document.getElementById('answer').value = '';
-        const fb = document.getElementById('feedback');
-        fb.textContent = '';
-        fb.className = '';
-      }
+    function clearInput() {
+      document.getElementById('answer').value = '';
+      const fb = document.getElementById('feedback');
+      fb.textContent = '';
+      fb.className = '';
+    }
 
-      document.getElementById('submitBtn').addEventListener('click', checkAnswer);
-      document.getElementById('clearBtn').addEventListener('click', clearInput);
-      document.getElementById('answer').addEventListener('keydown', e => {
-        if (e.key === 'Enter') checkAnswer();
-      });
-    })();
+    document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+    document.getElementById('clearBtn').addEventListener('click', clearInput);
+    document.getElementById('answer').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkAnswer();
+    });
   </script>
 </body>
 
